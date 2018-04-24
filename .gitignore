@@ -1,0 +1,5 @@
+*.dev.*
+/debug
+debug.test
+*.exe
+*.exe~

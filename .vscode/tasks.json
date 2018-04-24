@@ -1,0 +1,65 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "0.1.0",
+    "echoCommand": true,
+    "isShellCommand": true,
+    "showOutput": "always",
+    "windows": {
+        "command": "cmd",
+        "args": [
+            "/C"
+        ]
+    },
+    "tasks": [
+        {
+            "taskName": "build",
+            "isBuildCommand": true,
+			"suppressTaskName": true,
+            "args": [
+				"tasks",
+                "${workspaceRoot}/../../../../",
+                "${fileDirname}",
+				"build"
+            ],
+            "isWatching": false,
+            "problemMatcher1": {
+                "owner": "go",
+                "fileLocation": [
+                    "relative",
+                    "${fileDirname}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(.*)$",
+                    "file":1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
+            "taskName": "install",
+			"suppressTaskName": true,
+            "args": [
+				"tasks",
+                "${workspaceRoot}/../../../../",
+                "${fileDirname}",
+				"install"
+            ],
+            "isWatching": false,
+            "problemMatcher1": {
+                "owner": "go",
+                "fileLocation": [
+                    "relative",
+                    "${fileDirname}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):\\s+(.*)$",
+                    "file":1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        }
+    ]
+}

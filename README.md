@@ -1,2 +1,5 @@
 # innoisp
-Tool to inspect innodb table space file.
+
+Innodb inspector, show the innodb table space file segments and pages information.
+
+Just for learning innodb storage format.
