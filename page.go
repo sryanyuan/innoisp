@@ -87,7 +87,7 @@ func pageTypeToString(typ int) string {
 	}
 
 	if idx < 0 {
-		return fmt.Sprintf("UNKNOWN(%04X)", typ)
+		return fmt.Sprintf("UNKNOWN(0x%04X)", typ)
 	}
 	return pageTypeStrs[idx]
 }
@@ -96,8 +96,28 @@ type Page struct {
 	// Start with file header
 	fheader FileHeader
 	pheader PageHeader
+	// page directory slots
+	directorySlots []byte
+	// checksum && lsn
+	trailer [8]byte
 	// not innodb data
 	offset int
+}
+
+func (p *Page) printDirectorySlots() {
+	if nil == p.directorySlots {
+		return
+	}
+	fmt.Printf("\t\tPage directory slots (%d total):\r\n[", len(p.directorySlots)/2)
+	for i := 0; i < len(p.directorySlots); i += 2 {
+		v := binary.BigEndian.Uint16(p.directorySlots[i:])
+		fmt.Printf("0x%04X", v)
+		if i+2 < len(p.directorySlots) {
+			fmt.Printf(" ")
+		}
+	}
+	fmt.Printf("]")
+	fmt.Printf("\r\n")
 }
 
 type FileHeader struct {
@@ -119,6 +139,18 @@ type FileHeader struct {
 	// Arch log no or space id
 	// For mysql >= 4.0.14 is space id
 	archLogNoOrSpaceID uint32
+}
+
+func (h *FileHeader) printVerbose() {
+	fmt.Printf("\t\tFile header:\r\n")
+	fmt.Printf("Type <%d> ", h.typ)
+	fmt.Printf("Checksum <0x%08X> ", h.spaceOrChecksum)
+	fmt.Printf("Offset <%d> ", h.offset)
+	fmt.Printf("Prev <0x%08X> ", h.prev)
+	fmt.Printf("Next <0x%08X> ", h.next)
+	fmt.Printf("Log sequence number <%d> ", h.lsn)
+	fmt.Printf("Space ID <%d> ", h.archLogNoOrSpaceID)
+	fmt.Printf("\r\n")
 }
 
 func (h *FileHeader) parse(r io.Reader) error {
@@ -171,6 +203,20 @@ type PageHeader struct {
 
 func (h *PageHeader) printIndex() {
 	fmt.Printf("level <%d> ", h.level)
+}
+
+func (h *PageHeader) printVerbose() {
+	fmt.Printf("\t\tPage header:\r\n")
+	fmt.Printf("Heap top <0x%04X> ", h.heapTop)
+	fmt.Printf("N heap <0x%04X> ", h.nHeap)
+	fmt.Printf("Free <0x%04X> ", h.free)
+	fmt.Printf("Garbage <0x%04X> ", h.garbage)
+	fmt.Printf("Last insert <0x%04X> ", h.lastInsert)
+	fmt.Printf("Direction <0x%04X> ", h.direction)
+	fmt.Printf("N direction <0x%04X> ", h.nDirection)
+	fmt.Printf("N recs <0x%04X> ", h.nRecs)
+	fmt.Printf("Index id <0x%016X> ", h.indexID)
+	fmt.Printf("\r\n")
 }
 
 func (h *PageHeader) parse(r io.Reader) error {
@@ -231,5 +277,26 @@ func (p *Page) parse(data []byte) error {
 		return err
 	}
 
+	// Parse directory slots
+	if p.pheader.nDirSlots != 0 &&
+		p.fheader.typ == pageTypeIndex {
+		// Every slot occupy 2 bytes
+		p.directorySlots = make([]byte, p.pheader.nDirSlots*2)
+		copy(p.directorySlots, data[len(data)-8-len(p.directorySlots):])
+	}
+
+	// Parse file trailer, last 8 bytes
+	copy(p.trailer[:], data[len(data)-8:])
+
 	return nil
+}
+
+func (p *Page) printFileTrailer() {
+	fmt.Printf("\t\tFile trailer:\r\n")
+	// Lower 4 bytes is checksum
+	checksum := binary.BigEndian.Uint32(p.trailer[0:4])
+	// Higher 4 bytes is lsn
+	lsn := binary.BigEndian.Uint32(p.trailer[4:8])
+	fmt.Printf("Check sum<0x%08X> LSN<%d> ", checksum, lsn)
+	fmt.Printf("\r\n")
 }

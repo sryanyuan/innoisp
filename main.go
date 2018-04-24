@@ -7,11 +7,13 @@ import (
 )
 
 var (
-	flagFile string
+	flagFile    string
+	flagVerbose int
 )
 
 func main() {
 	flag.StringVar(&flagFile, "file", "", "input innodb ibd file")
+	flag.IntVar(&flagVerbose, "verbose", 0, "enable verbose mode")
 	flag.Parse()
 
 	if "" == flagFile {
@@ -30,5 +32,5 @@ func main() {
 	if nil != err {
 		fmt.Println("Parse innodb data file error ", err)
 	}
-	printPages(pages)
+	printPages(pages, flagVerbose)
 }

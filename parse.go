@@ -34,13 +34,20 @@ func parseInnodbDataFile(f *os.File) ([]*Page, error) {
 	return pages, nil
 }
 
-func printPages(pages []*Page) {
+func printPages(pages []*Page, verbose int) {
 	for i, page := range pages {
 		fmt.Printf("==========PAGE %d==========\r\n", i)
-		fmt.Printf("page num %d, offset %08X, ", i, page.offset)
+		fmt.Printf("page num %d, offset 0x%08X, ", i, page.offset)
 		fmt.Printf("page type <%s> ", pageTypeToString(int(page.fheader.typ)))
 		if page.fheader.typ == pageTypeIndex {
 			page.pheader.printIndex()
+		}
+		fmt.Printf("\r\n")
+		if verbose != 0 {
+			page.fheader.printVerbose()
+			page.pheader.printVerbose()
+			page.printFileTrailer()
+			page.printDirectorySlots()
 		}
 		fmt.Printf("\r\n")
 	}
