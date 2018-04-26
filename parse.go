@@ -1,12 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"os"
 )
 
-func parseInnodbDataFile(f *os.File) ([]*Page, error) {
+type parsePageOptions struct {
+	parseRecords bool
+}
+
+func parseInnodbDataFile(f *os.File, options *parsePageOptions) ([]*Page, error) {
 	// Every page is 16k
 	var pageData [16 * 1024]byte
 	pages := make([]*Page, 0, 128)
@@ -24,7 +27,7 @@ func parseInnodbDataFile(f *os.File) ([]*Page, error) {
 
 		var page Page
 		page.offset = offset
-		if err = page.parse(pageData[:]); nil != err {
+		if err = page.parse(pageData[:], options); nil != err {
 			return nil, err
 		}
 		pages = append(pages, &page)
@@ -32,23 +35,4 @@ func parseInnodbDataFile(f *os.File) ([]*Page, error) {
 	}
 
 	return pages, nil
-}
-
-func printPages(pages []*Page, verbose int) {
-	for i, page := range pages {
-		fmt.Printf("==========PAGE %d==========\r\n", i)
-		fmt.Printf("page num %d, offset 0x%08X, ", i, page.offset)
-		fmt.Printf("page type <%s> ", pageTypeToString(int(page.fheader.typ)))
-		if page.fheader.typ == pageTypeIndex {
-			page.pheader.printIndex()
-		}
-		fmt.Printf("\r\n")
-		if verbose != 0 {
-			page.fheader.printVerbose()
-			page.pheader.printVerbose()
-			page.printFileTrailer()
-			page.printDirectorySlots()
-		}
-		fmt.Printf("\r\n")
-	}
 }
