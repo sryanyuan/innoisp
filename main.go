@@ -9,6 +9,7 @@ func main() {
 	var cmdEntry = &cobra.Command{Use: "innoisp"}
 	cmdEntry.AddCommand(newOverviewCommand())
 	cmdEntry.AddCommand(newDslotsCommand())
+	cmdEntry.AddCommand(newSpaceCommand())
 	if err := cmdEntry.Execute(); nil != err {
 		fmt.Println("command execute error ", err)
 	}

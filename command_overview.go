@@ -9,6 +9,7 @@ import (
 type overviewOptions struct {
 	file    string
 	verbose bool
+	page    int
 }
 
 func newOverviewCommand() *cobra.Command {
@@ -24,6 +25,7 @@ func newOverviewCommand() *cobra.Command {
 
 	c.Flags().StringVarP(&options.file, "file", "f", "", "innodb table space file path")
 	c.Flags().BoolVarP(&options.verbose, "verbose", "v", false, "show verbose information")
+	c.Flags().IntVarP(&options.page, "page", "p", -1, "specify page to show")
 
 	return c
 }
@@ -45,11 +47,16 @@ func doOverview(cmd *cobra.Command, options *overviewOptions) {
 	if nil != err {
 		fmt.Println("Parse innodb data file error ", err)
 	}
-	printInnodbPages(pages, options.verbose)
+	printInnodbPages(pages, options)
 }
 
-func printInnodbPages(pages []*Page, verbose bool) {
+func printInnodbPages(pages []*Page, options *overviewOptions) {
 	for i, page := range pages {
+		if options.page >= 0 {
+			if i != options.page {
+				continue
+			}
+		}
 		fmt.Printf("==========PAGE %d==========\r\n", i)
 		fmt.Printf("page num %d, offset 0x%08X, ", i, page.offset)
 		fmt.Printf("page type <%s> ", pageTypeToString(int(page.fheader.typ)))
@@ -57,7 +64,7 @@ func printInnodbPages(pages []*Page, verbose bool) {
 			page.pheader.printIndex()
 		}
 		fmt.Printf("\r\n")
-		if verbose {
+		if options.verbose {
 			page.fheader.printVerbose()
 			page.pheader.printVerbose()
 			page.printFileTrailer()

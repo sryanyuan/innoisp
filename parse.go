@@ -15,6 +15,7 @@ func parseInnodbDataFile(f *os.File, options *parsePageOptions) ([]*Page, error)
 	pages := make([]*Page, 0, 128)
 	var offset int
 
+	pageNo := 0
 	for {
 		n, err := io.ReadFull(f, pageData[:])
 		if nil != err {
@@ -27,11 +28,14 @@ func parseInnodbDataFile(f *os.File, options *parsePageOptions) ([]*Page, error)
 
 		var page Page
 		page.offset = offset
+		page.no = pageNo
+
 		if err = page.parse(pageData[:], options); nil != err {
 			return nil, err
 		}
 		pages = append(pages, &page)
 		offset += n
+		pageNo++
 	}
 
 	return pages, nil
