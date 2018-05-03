@@ -74,6 +74,8 @@ func doSpace(cmd *cobra.Command, options *spaceOptions) {
 			fmt.Printf("%-51s", "free list")
 			fmt.Printf("%-51s", "full_frag list")
 			fmt.Printf("%-17s", "next segment id")
+			fmt.Printf("%-51s", "full inodes")
+			fmt.Printf("%-51s", "free inodes")
 			fmt.Printf("\r\n")
 			// Columns
 			fmt.Printf("%-10d", page.fspheader.spaceID)
@@ -85,6 +87,8 @@ func doSpace(cmd *cobra.Command, options *spaceOptions) {
 			fmt.Printf("%-51s", page.fspheader.freeList.toString(8))
 			fmt.Printf("%-51s", page.fspheader.fullFragList.toString(8))
 			fmt.Printf("%-17d", page.fspheader.nextUnusedSegmentID)
+			fmt.Printf("%-51s", page.fspheader.fullInodesList.toString(38))
+			fmt.Printf("%-51s", page.fspheader.freeInodesList.toString(38))
 			fmt.Printf("\r\n\r\n")
 		}
 		// Xdes

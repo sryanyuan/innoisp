@@ -4,23 +4,44 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+
+	"github.com/juju/errors"
 )
 
+type FileSegmentHeader struct {
+	inodeSpaceID    uint32
+	inodePageNumber uint32
+	inodeOffset     uint16
+}
+
+func (f *FileSegmentHeader) parse(r io.Reader) error {
+	if err := binary.Read(r, binary.BigEndian, &f.inodeSpaceID); nil != err {
+		return errors.Trace(err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &f.inodePageNumber); nil != err {
+		return errors.Trace(err)
+	}
+	if err := binary.Read(r, binary.BigEndian, &f.inodeOffset); nil != err {
+		return errors.Trace(err)
+	}
+	return nil
+}
+
 type PageIndexHeader struct {
-	nDirSlots  uint16
-	heapTop    uint16
-	nHeap      uint16
-	free       uint16
-	garbage    uint16
-	lastInsert uint16
-	direction  uint16
-	nDirection uint16
-	nRecs      uint16
-	maxTrxID   uint64
-	level      uint16
-	indexID    uint64
-	btrSegLeaf [10]byte
-	btrSegTop  [10]byte
+	nDirSlots    uint16
+	heapTop      uint16
+	nHeap        uint16
+	free         uint16
+	garbage      uint16
+	lastInsert   uint16
+	direction    uint16
+	nDirection   uint16
+	nRecs        uint16
+	maxTrxID     uint64
+	level        uint16
+	indexID      uint64
+	leafInode    FileSegmentHeader
+	nonleafInode FileSegmentHeader
 }
 
 func (h *PageIndexHeader) printIndex() {
@@ -38,6 +59,10 @@ func (h *PageIndexHeader) printVerbose() {
 	fmt.Printf("N direction <0x%04X> ", h.nDirection)
 	fmt.Printf("N recs <0x%04X> ", h.nRecs)
 	fmt.Printf("Index id <0x%016X> ", h.indexID)
+	fmt.Printf("Leaf inode <0x%08X:0x%04X> ",
+		h.leafInode.inodePageNumber, h.leafInode.inodeOffset)
+	fmt.Printf("Non-leaf inode <0x%08X:0x%04X> ",
+		h.nonleafInode.inodePageNumber, h.nonleafInode.inodeOffset)
 	fmt.Printf("\r\n")
 }
 
@@ -65,6 +90,9 @@ func (h *PageIndexHeader) parse(r io.Reader) error {
 	if err = binary.Read(r, binary.BigEndian, &h.direction); nil != err {
 		return err
 	}
+	if err = binary.Read(r, binary.BigEndian, &h.nDirection); nil != err {
+		return err
+	}
 	if err = binary.Read(r, binary.BigEndian, &h.nRecs); nil != err {
 		return err
 	}
@@ -77,10 +105,10 @@ func (h *PageIndexHeader) parse(r io.Reader) error {
 	if err = binary.Read(r, binary.BigEndian, &h.indexID); nil != err {
 		return err
 	}
-	if _, err = r.Read(h.btrSegLeaf[:]); nil != err {
+	if err = h.leafInode.parse(r); nil != err {
 		return err
 	}
-	if _, err = r.Read(h.btrSegTop[:]); nil != err {
+	if err = h.nonleafInode.parse(r); nil != err {
 		return err
 	}
 

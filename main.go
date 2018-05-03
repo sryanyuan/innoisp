@@ -10,6 +10,7 @@ func main() {
 	cmdEntry.AddCommand(newOverviewCommand())
 	cmdEntry.AddCommand(newDslotsCommand())
 	cmdEntry.AddCommand(newSpaceCommand())
+	cmdEntry.AddCommand(newInodeCommand())
 	if err := cmdEntry.Execute(); nil != err {
 		fmt.Println("command execute error ", err)
 	}

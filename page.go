@@ -19,6 +19,8 @@ type Page struct {
 	pheader        PageIndexHeader
 	directorySlots []byte
 	dslots         []*DSlots
+	// Inode page part
+	inode INode
 	// checksum && lsn
 	trailer [8]byte
 	// not innodb data
@@ -71,6 +73,10 @@ func (p *Page) parse(data []byte, options *parsePageOptions) error {
 			return errors.Trace(err)
 		}
 		if err = p.parseXdeses(r); nil != err {
+			return errors.Trace(err)
+		}
+	} else if p.fheader.typ == pageTypeINode {
+		if err = p.inode.parse(r); nil != err {
 			return errors.Trace(err)
 		}
 	}

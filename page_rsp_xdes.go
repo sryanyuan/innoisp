@@ -19,16 +19,7 @@ type ListBaseNode struct {
 
 // 49 max
 func (n *ListBaseNode) toString(offset uint16) string {
-	prevo := n.prevPageOffset
-	nexto := n.nextPageOffset
-	if n.prevPageNo != 0xffffffff {
-		prevo -= offset
-	}
-	if n.nextPageNo != 0xffffffff {
-		nexto -= offset
-	}
-	return fmt.Sprintf("len<%d> 0x%08X:0x%04X 0x%08X:0x%04X",
-		n.length, n.prevPageNo, prevo, n.nextPageNo, nexto)
+	return fmt.Sprintf("len<%d> %s", n.length, n.ListNode.toString(offset))
 }
 
 func (n *ListBaseNode) parse(r io.Reader) error {
@@ -47,6 +38,20 @@ type ListNode struct {
 	prevPageOffset uint16
 	nextPageNo     uint32
 	nextPageOffset uint16
+}
+
+// 49 max
+func (n *ListNode) toString(offset uint16) string {
+	prevo := n.prevPageOffset
+	nexto := n.nextPageOffset
+	if n.prevPageNo != 0xffffffff {
+		prevo -= offset
+	}
+	if n.nextPageNo != 0xffffffff {
+		nexto -= offset
+	}
+	return fmt.Sprintf("0x%08X:0x%04X 0x%08X:0x%04X",
+		n.prevPageNo, prevo, n.nextPageNo, nexto)
 }
 
 func (n *ListNode) parse(r io.Reader) error {
