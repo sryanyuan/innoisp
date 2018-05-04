@@ -29,6 +29,11 @@ type Page struct {
 	pksize int
 }
 
+func (p *Page) setPageNo(no int) {
+	p.no = no
+	p.offset = 16 * 1024 * no
+}
+
 func (p *Page) printDirectorySlots() {
 	if nil == p.directorySlots {
 		return

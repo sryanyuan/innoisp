@@ -11,6 +11,7 @@ func main() {
 	cmdEntry.AddCommand(newDslotsCommand())
 	cmdEntry.AddCommand(newSpaceCommand())
 	cmdEntry.AddCommand(newInodeCommand())
+	cmdEntry.AddCommand(newSearchCommand())
 	if err := cmdEntry.Execute(); nil != err {
 		fmt.Println("command execute error ", err)
 	}

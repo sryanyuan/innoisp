@@ -55,6 +55,7 @@ func doDslots(cmd *cobra.Command, options *dslotsOptions) {
 
 	pages, err := parseInnodbDataFile(f, &parsePageOptions{
 		parseRecords: options.recorders,
+		pksize:       options.pksize,
 	})
 	if nil != err {
 		fmt.Println("Parse innodb data file error ", err)
@@ -73,8 +74,8 @@ func doDslots(cmd *cobra.Command, options *dslotsOptions) {
 		page.pksize = options.pksize
 		fmt.Printf("\t\t\t==========PAGE %d OFFSET 0x%04X LEVEL %d==========\r\n",
 			pi, page.offset, page.pheader.level)
-		fmt.Printf("%-8s%-12s%-12s%-8s%-8s\r\n",
-			"slot", "offset", "type", "owned", "key")
+		fmt.Printf("%-8s%-12s%-12s%-8s%-8s%-10s\r\n",
+			"slot", "offset", "type", "owned", "key", "page ptr")
 
 		for _, slot := range page.dslots {
 			fmt.Printf("%-8d0x%-10.04X%-12s%-8d",
@@ -82,6 +83,12 @@ func doDslots(cmd *cobra.Command, options *dslotsOptions) {
 			if nil != slot.rceptr &&
 				slot.rceptr.hasKey {
 				fmt.Printf("%-8d", slot.rceptr.key)
+			} else {
+				fmt.Printf("%-8s", "N/A")
+			}
+			if nil != slot.rceptr &&
+				0xffffffff != slot.rceptr.pageptr {
+				fmt.Printf("%-10d", slot.rceptr.pageptr)
 			} else {
 				fmt.Printf("%-8s", "N/A")
 			}
@@ -96,10 +103,14 @@ func doDslots(cmd *cobra.Command, options *dslotsOptions) {
 					for i := 0; i < int(slot.owned); i++ {
 						if i+1 < int(slot.owned) {
 							if ptr.hasKey {
-								fmt.Printf("[0x%04X K%d]->", ptr.fieldDataOffset, ptr.key)
+								fmt.Printf("[0x%04X PK%d", ptr.fieldDataOffset, ptr.key)
 							} else {
-								fmt.Printf("[0x%04X]->", ptr.fieldDataOffset)
+								fmt.Printf("[0x%04X", ptr.fieldDataOffset)
 							}
+							if ptr.pageptr != 0xffffffff {
+								fmt.Printf(" ->P%d", ptr.pageptr)
+							}
+							fmt.Printf("]->")
 						} else {
 							if slot.rctype == recorderTypeInfimum {
 								fmt.Printf("[infimum own ")
@@ -109,10 +120,14 @@ func doDslots(cmd *cobra.Command, options *dslotsOptions) {
 								fmt.Printf("[normal own ")
 							}
 							if ptr.hasKey {
-								fmt.Printf("%d 0x%04X K%d]", slot.owned, ptr.fieldDataOffset, ptr.key)
+								fmt.Printf("%d 0x%04X PK%d", slot.owned, ptr.fieldDataOffset, ptr.key)
 							} else {
-								fmt.Printf("%d 0x%04X]", slot.owned, ptr.fieldDataOffset)
+								fmt.Printf("%d 0x%04X", slot.owned, ptr.fieldDataOffset)
 							}
+							if ptr.pageptr != 0xffffffff {
+								fmt.Printf(" ->P%d", ptr.pageptr)
+							}
+							fmt.Printf("]")
 						}
 						ptr = ptr.next
 					}

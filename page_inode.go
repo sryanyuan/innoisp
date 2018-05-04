@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	inodesCountInPage = 85
+	inodesCountInPage     = 85
+	inodeEntryMagicNumber = 97937874
 )
 
 type INodeEntry struct {

@@ -125,13 +125,29 @@ type DSlots struct {
 	rceptr *compactRecorder
 }
 
+// Previous bytes is variable length and null flag masks
 // 40bit = 5bytes
+// Flags (4 bits) + Number of records owned (4 bits) = 1 byte
+// Order (13 bits) + record type (3 bits) = 2 bytes
+// Next record offset (2 bytes)
 type compactRecorderHeader struct {
-	deleteFlag   bool
-	minRecFlag   bool
-	Owned        uint8
-	heapNo       uint16
-	recordType   uint8
+	// deleted (2) meaning the record is delete-marked
+	// (and will be actually deleted by a purge operation in the future).
+	deleteFlag bool
+	// min_rec (1) meaning this record is the minimum record in a non-leaf level of the B+Tree
+	minRecFlag bool
+	// The number of records “owned” by the current record in the page directory.
+	Owned uint8
+	// The order in which this record was inserted into the heap.
+	// Heap records (which include infimum and supremum) are numbered from 0.
+	// Infimum is always order 0, supremum is always order 1.
+	// User records inserted will be numbered from 2.
+	heapNo uint16
+	// The type of the record, where currently only 4 values are supported:
+	// conventional (0), node pointer (1), infimum (2), and supremum (3).
+	recordType uint8
+	// A relative offset from the current record to the
+	// origin of the next record within the page in ascending order by key.
 	nextRecorder uint16
 }
 
@@ -164,6 +180,8 @@ type compactRecorder struct {
 	offset uint16 // Offset relative to the page
 	hasKey bool
 	key    int64 // Only support bigint as primary key
+	// If is root page, the node should pointer to internal or leaf node
+	pageptr uint32
 }
 
 func (p *Page) parseDirectorySlot(data []byte) error {
@@ -222,6 +240,7 @@ func (p *Page) parseRecorders(data []byte) error {
 			// Infimum recorder, only own it self, process the next slot
 			recorderHeadOffset := slot.value - 5
 			prevRecorder = &compactRecorder{}
+			prevRecorder.pageptr = 0xffffffff
 			if err := prevRecorder.header.parse(data[recorderHeadOffset:]); nil != err {
 				return err
 			}
@@ -235,6 +254,7 @@ func (p *Page) parseRecorders(data []byte) error {
 
 			for i := 0; i < int(slot.owned); i++ {
 				rc := &compactRecorder{}
+				rc.pageptr = 0xffffffff
 				rc.offset = recorderHeadOffset
 				if err := rc.header.parse(data[recorderHeadOffset:]); nil != err {
 					return err
@@ -255,6 +275,11 @@ func (p *Page) parseRecorders(data []byte) error {
 					} else if p.pksize == 1 {
 						rc.key = int64(data[rc.fieldDataOffset])
 						rc.key &= 0x7f
+					}
+
+					if p.pheader.level != 0 {
+						// root or internal page
+						rc.pageptr = binary.BigEndian.Uint32(data[int(rc.fieldDataOffset)+p.pksize:])
 					}
 
 					rc.hasKey = true
