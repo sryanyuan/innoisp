@@ -108,7 +108,7 @@ This command will show the file space header page and extend descriptor page inf
 
 ### inode
 
-This file will show the file segment inode page information
+This command will show the file segment inode page information
 
 ```innoisp inode -f db.ibd```
 
@@ -120,8 +120,26 @@ This file will show the file segment inode page information
     0x00000032:1        0         len<0> 0xFFFFFFFF:0x0000 0xFFFFFFFF:0x0000         len<0> 0xFFFFFFFF:0x0000 0xFFFFFFFF:0x0000         len<0> 0xFFFFFFFF:0x0000 0xFFFFFFFF:0x0000         3 36 37 (page allocate)
     0x000000F2:2        36        len<0> 0xFFFFFFFF:0x0000 0xFFFFFFFF:0x0000         len<1> 0x00000000:0x047E 0x00000000:0x047E         len<24> 0x00000000:0x00BE 0x00000000:0x0456        4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 (extend allocate)
 
+### search
+
+Search ibd file with specified primary key value.
+
+```innoisp search -f db.ibd -k 2```
+
+    File db.ibd has 2304 page(s)
+    Searching for file segment inode page ...
+    File segment inode page found at index 2
+    Searching for root index page ...
+    Root index page found at index 3, 3 inode used
+    Loading root index page at index 3
+    Search directory slots of page 3 level 2, directory slots count 2
+    Search directory slots of page 37 level 1, directory slots count 251
+    Search directory slots of page 633 level 0, directory slots count 76
+    Recorder found, page <633> header offset <0x0078> data offset<0x007D>
+    Statistics: Page searched <3> index page searched <2> search times <19> cost <1 ms>
+
 ## TODO list
 
 ### search
 
-Search the ibd file through index non-leaf page
+Search the ibd file through index non-leaf page (done 2018/05/10)
