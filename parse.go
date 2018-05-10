@@ -90,6 +90,7 @@ func readPageFromFile(f *os.File, pageNo int, options *parsePageOptions) (*Page,
 		return nil, err
 	}
 	var page Page
+	page.pksize = options.pksize
 	if err := page.parse(data[:], options); nil != err {
 		return nil, err
 	}
